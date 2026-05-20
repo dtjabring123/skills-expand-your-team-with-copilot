@@ -58,6 +58,10 @@ document.addEventListener("DOMContentLoaded", () => {
     afternoon: { start: "15:00", end: "18:00" }, // After school hours
     weekend: { days: ["Saturday", "Sunday"] }, // Weekend days
   };
+  const schoolName =
+    document.body.dataset.schoolName ||
+    document.querySelector("header h1")?.textContent ||
+    "Mergington High School";
 
   // Initialize filters from active elements
   function initializeFilters() {
@@ -516,6 +520,57 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Build a clear share message for an activity
+  function createShareText(name, details, formattedSchedule) {
+    return `Check out ${name} at ${schoolName}! ${details.description} Schedule: ${formattedSchedule}`;
+  }
+
+  // Build social share links and text for an activity
+  function buildShareData(name, details, formattedSchedule) {
+    const activityUrl = `${window.location.origin}${window.location.pathname}?activity=${encodeURIComponent(
+      name
+    )}`;
+    const shareText = createShareText(name, details, formattedSchedule);
+
+    return {
+      activityUrl,
+      whatsappUrl: `https://wa.me/?text=${encodeURIComponent(
+        `${shareText} ${activityUrl}`
+      )}`,
+      xUrl: `https://x.com/intent/tweet?text=${encodeURIComponent(
+        `${shareText} ${activityUrl}`
+      )}`,
+      copyText: `${shareText}
+${activityUrl}`,
+    };
+  }
+
+  // Copy text to clipboard with fallback support
+  async function copyTextToClipboard(text) {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return { usedLegacyFallback: false };
+    }
+
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.setAttribute("readonly", "");
+    textArea.style.position = "absolute";
+    textArea.style.left = "-9999px";
+    document.body.appendChild(textArea);
+    textArea.select();
+
+    // Deprecated but intentional legacy fallback for browsers without the Clipboard API.
+    const copied = document.execCommand("copy");
+    document.body.removeChild(textArea);
+
+    if (!copied) {
+      throw new Error("Clipboard copy failed");
+    }
+
+    return { usedLegacyFallback: true };
+  }
+
   // Function to render a single activity card
   function renderActivityCard(name, details) {
     const activityCard = document.createElement("div");
@@ -549,6 +604,9 @@ document.addEventListener("DOMContentLoaded", () => {
         ${typeInfo.label}
       </span>
     `;
+
+    // Build share data
+    const shareData = buildShareData(name, details, formattedSchedule);
 
     // Create capacity indicator
     const capacityIndicator = `
@@ -596,6 +654,11 @@ document.addEventListener("DOMContentLoaded", () => {
             .join("")}
         </ul>
       </div>
+      <div class="share-actions" role="group" aria-label="Share this activity">
+        <button class="share-button share-whatsapp" type="button">Share on WhatsApp</button>
+        <button class="share-button share-x" type="button">Share on X</button>
+        <button class="share-button share-copy" type="button">Copy Message</button>
+      </div>
       <div class="activity-card-actions">
         ${
           currentUser
@@ -619,6 +682,39 @@ document.addEventListener("DOMContentLoaded", () => {
     const deleteButtons = activityCard.querySelectorAll(".delete-participant");
     deleteButtons.forEach((button) => {
       button.addEventListener("click", handleUnregister);
+    });
+
+    // Add social sharing handlers
+    const whatsappButton = activityCard.querySelector(".share-whatsapp");
+    const xButton = activityCard.querySelector(".share-x");
+    const copyButton = activityCard.querySelector(".share-copy");
+
+    whatsappButton.addEventListener("click", () => {
+      window.open(shareData.whatsappUrl, "_blank", "noopener,noreferrer");
+    });
+
+    xButton.addEventListener("click", () => {
+      window.open(shareData.xUrl, "_blank", "noopener,noreferrer");
+    });
+
+    copyButton.addEventListener("click", async () => {
+      try {
+        const { usedLegacyFallback } = await copyTextToClipboard(
+          shareData.copyText
+        );
+        if (usedLegacyFallback) {
+          showMessage(
+            "Share message copied. Please update your browser for the best experience.",
+            "info"
+          );
+          return;
+        }
+
+        showMessage("Share message copied to clipboard.", "success");
+      } catch (error) {
+        console.error("Error copying share link:", error);
+        showMessage("Could not copy share link. Please try again.", "error");
+      }
     });
 
     // Add click handler for register button (only when authenticated)
