@@ -51,9 +51,9 @@ document.addEventListener("DOMContentLoaded", () => {
     weekend: { days: ["Saturday", "Sunday"] }, // Weekend days
   };
   const schoolName =
-    document.querySelector("header h1")?.textContent || "Mergington High School";
-  const shareMessageTemplate =
-    "Check out {activity} at {school}! {description} Schedule: {schedule}";
+    document.body.dataset.schoolName ||
+    document.querySelector("header h1")?.textContent ||
+    "Mergington High School";
 
   // Initialize filters from active elements
   function initializeFilters() {
@@ -476,16 +476,17 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Build a clear share message for an activity
+  function createShareText(name, details, formattedSchedule) {
+    return `Check out ${name} at ${schoolName}! ${details.description} Schedule: ${formattedSchedule}`;
+  }
+
   // Build social share links and text for an activity
   function buildShareData(name, details, formattedSchedule) {
     const activityUrl = `${window.location.origin}${window.location.pathname}?activity=${encodeURIComponent(
       name
     )}`;
-    const shareText = shareMessageTemplate
-      .replace("{activity}", name)
-      .replace("{school}", schoolName)
-      .replace("{description}", details.description)
-      .replace("{schedule}", formattedSchedule);
+    const shareText = createShareText(name, details, formattedSchedule);
 
     return {
       activityUrl,
@@ -504,7 +505,7 @@ ${activityUrl}`,
   async function copyTextToClipboard(text) {
     if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(text);
-      return;
+      return false;
     }
 
     const textArea = document.createElement("textarea");
@@ -522,6 +523,8 @@ ${activityUrl}`,
     if (!copied) {
       throw new Error("Clipboard copy failed");
     }
+
+    return true;
   }
 
   // Function to render a single activity card
@@ -652,8 +655,13 @@ ${activityUrl}`,
 
     copyButton.addEventListener("click", async () => {
       try {
-        await copyTextToClipboard(shareData.copyText);
-        showMessage("Share link copied to clipboard.", "success");
+        const usedLegacyFallback = await copyTextToClipboard(shareData.copyText);
+        if (usedLegacyFallback) {
+          showMessage("Share message copied. Please update your browser for the best experience.", "info");
+          return;
+        }
+
+        showMessage("Share message copied to clipboard.", "success");
       } catch (error) {
         console.error("Error copying share link:", error);
         showMessage("Could not copy share link. Please try again.", "error");
