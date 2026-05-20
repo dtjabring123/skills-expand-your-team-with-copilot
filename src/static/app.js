@@ -484,7 +484,7 @@ document.addEventListener("DOMContentLoaded", () => {
       whatsappUrl: `https://wa.me/?text=${encodeURIComponent(
         `${shareText} ${activityUrl}`
       )}`,
-      xUrl: `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+      xUrl: `https://x.com/intent/tweet?text=${encodeURIComponent(
         `${shareText} ${activityUrl}`
       )}`,
       copyText: `${shareText}
@@ -507,6 +507,7 @@ ${activityUrl}`,
     document.body.appendChild(textArea);
     textArea.select();
 
+    // Legacy fallback for browsers that do not support the Clipboard API.
     const copied = document.execCommand("copy");
     document.body.removeChild(textArea);
 
