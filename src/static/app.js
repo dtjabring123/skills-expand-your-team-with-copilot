@@ -52,6 +52,8 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   const schoolName =
     document.querySelector("header h1")?.textContent || "Mergington High School";
+  const shareMessageTemplate =
+    "Check out {activity} at {school}! {description} Schedule: {schedule}";
 
   // Initialize filters from active elements
   function initializeFilters() {
@@ -479,7 +481,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const activityUrl = `${window.location.origin}${window.location.pathname}?activity=${encodeURIComponent(
       name
     )}`;
-    const shareText = `Check out ${name} at ${schoolName}! ${details.description} Schedule: ${formattedSchedule}`;
+    const shareText = shareMessageTemplate
+      .replace("{activity}", name)
+      .replace("{school}", schoolName)
+      .replace("{description}", details.description)
+      .replace("{schedule}", formattedSchedule);
 
     return {
       activityUrl,
@@ -601,10 +607,10 @@ ${activityUrl}`,
             .join("")}
         </ul>
       </div>
-      <div class="share-actions" aria-label="Share this activity">
+      <div class="share-actions" role="group" aria-label="Share this activity">
         <button class="share-button share-whatsapp" type="button">Share on WhatsApp</button>
         <button class="share-button share-x" type="button">Share on X</button>
-        <button class="share-button share-copy" type="button">Copy Link</button>
+        <button class="share-button share-copy" type="button">Copy Message</button>
       </div>
       <div class="activity-card-actions">
         ${
