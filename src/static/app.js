@@ -50,6 +50,8 @@ document.addEventListener("DOMContentLoaded", () => {
     afternoon: { start: "15:00", end: "18:00" }, // After school hours
     weekend: { days: ["Saturday", "Sunday"] }, // Weekend days
   };
+  const schoolName =
+    document.querySelector("header h1")?.textContent || "Mergington High School";
 
   // Initialize filters from active elements
   function initializeFilters() {
@@ -477,7 +479,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const activityUrl = `${window.location.origin}${window.location.pathname}?activity=${encodeURIComponent(
       name
     )}`;
-    const shareText = `Check out ${name} at Mergington High School! ${details.description} Schedule: ${formattedSchedule}`;
+    const shareText = `Check out ${name} at ${schoolName}! ${details.description} Schedule: ${formattedSchedule}`;
 
     return {
       activityUrl,
@@ -507,7 +509,7 @@ ${activityUrl}`,
     document.body.appendChild(textArea);
     textArea.select();
 
-    // Legacy fallback for browsers that do not support the Clipboard API.
+    // Deprecated but intentional legacy fallback for browsers without the Clipboard API.
     const copied = document.execCommand("copy");
     document.body.removeChild(textArea);
 
