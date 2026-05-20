@@ -505,7 +505,7 @@ ${activityUrl}`,
   async function copyTextToClipboard(text) {
     if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(text);
-      return false;
+      return { usedLegacyFallback: false };
     }
 
     const textArea = document.createElement("textarea");
@@ -524,7 +524,7 @@ ${activityUrl}`,
       throw new Error("Clipboard copy failed");
     }
 
-    return true;
+    return { usedLegacyFallback: true };
   }
 
   // Function to render a single activity card
@@ -655,9 +655,14 @@ ${activityUrl}`,
 
     copyButton.addEventListener("click", async () => {
       try {
-        const usedLegacyFallback = await copyTextToClipboard(shareData.copyText);
+        const { usedLegacyFallback } = await copyTextToClipboard(
+          shareData.copyText
+        );
         if (usedLegacyFallback) {
-          showMessage("Share message copied. Please update your browser for the best experience.", "info");
+          showMessage(
+            "Share message copied. Please update your browser for the best experience.",
+            "info"
+          );
           return;
         }
 
