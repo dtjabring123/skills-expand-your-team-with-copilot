@@ -472,6 +472,49 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Build social share links and text for an activity
+  function buildShareData(name, details, formattedSchedule) {
+    const activityUrl = `${window.location.origin}${window.location.pathname}?activity=${encodeURIComponent(
+      name
+    )}`;
+    const shareText = `Check out ${name} at Mergington High School! ${details.description} Schedule: ${formattedSchedule}`;
+
+    return {
+      activityUrl,
+      whatsappUrl: `https://wa.me/?text=${encodeURIComponent(
+        `${shareText} ${activityUrl}`
+      )}`,
+      xUrl: `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+        `${shareText} ${activityUrl}`
+      )}`,
+      copyText: `${shareText}
+${activityUrl}`,
+    };
+  }
+
+  // Copy text to clipboard with fallback support
+  async function copyTextToClipboard(text) {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.setAttribute("readonly", "");
+    textArea.style.position = "absolute";
+    textArea.style.left = "-9999px";
+    document.body.appendChild(textArea);
+    textArea.select();
+
+    const copied = document.execCommand("copy");
+    document.body.removeChild(textArea);
+
+    if (!copied) {
+      throw new Error("Clipboard copy failed");
+    }
+  }
+
   // Function to render a single activity card
   function renderActivityCard(name, details) {
     const activityCard = document.createElement("div");
@@ -505,6 +548,9 @@ document.addEventListener("DOMContentLoaded", () => {
         ${typeInfo.label}
       </span>
     `;
+
+    // Build share data
+    const shareData = buildShareData(name, details, formattedSchedule);
 
     // Create capacity indicator
     const capacityIndicator = `
@@ -552,6 +598,11 @@ document.addEventListener("DOMContentLoaded", () => {
             .join("")}
         </ul>
       </div>
+      <div class="share-actions" aria-label="Share this activity">
+        <button class="share-button share-whatsapp" type="button">Share on WhatsApp</button>
+        <button class="share-button share-x" type="button">Share on X</button>
+        <button class="share-button share-copy" type="button">Copy Link</button>
+      </div>
       <div class="activity-card-actions">
         ${
           currentUser
@@ -575,6 +626,29 @@ document.addEventListener("DOMContentLoaded", () => {
     const deleteButtons = activityCard.querySelectorAll(".delete-participant");
     deleteButtons.forEach((button) => {
       button.addEventListener("click", handleUnregister);
+    });
+
+    // Add social sharing handlers
+    const whatsappButton = activityCard.querySelector(".share-whatsapp");
+    const xButton = activityCard.querySelector(".share-x");
+    const copyButton = activityCard.querySelector(".share-copy");
+
+    whatsappButton.addEventListener("click", () => {
+      window.open(shareData.whatsappUrl, "_blank", "noopener,noreferrer");
+    });
+
+    xButton.addEventListener("click", () => {
+      window.open(shareData.xUrl, "_blank", "noopener,noreferrer");
+    });
+
+    copyButton.addEventListener("click", async () => {
+      try {
+        await copyTextToClipboard(shareData.copyText);
+        showMessage("Share link copied to clipboard.", "success");
+      } catch (error) {
+        console.error("Error copying share link:", error);
+        showMessage("Could not copy share link. Please try again.", "error");
+      }
     });
 
     // Add click handler for register button (only when authenticated)
